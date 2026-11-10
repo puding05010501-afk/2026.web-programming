@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+<script>
+    $(document).ready(function(){
+        $('.num').click(function(){
+            let cur = $('#disp2').val();
+            let n = $(this).val();
+            $('#disp2').val(cur+n);
+        });
+        $('.op').click(function(){
+            let cur = $('#disp2').val();
+            let opt = $(this).val();
+            if ( opt != "=") {
+            $('#disp2').val(cur+opt);
+            }
+            else {
+                $('#disp1').val(cur);
+                $('#disp2').val(eval(cur));
+            }
+        });
+    });
+</script>
+
+
+        // 과제 1 : p 연산자 2개를 분리시키고 실제 게산을 수행할 수 있는 계산기 만들기.
+        //자바 스크립트에 split 함수도 있으니 연산자를 기준으로 쪼갤 수 있다.
+        //ex : num op num = reslut 이 가능하도록 만드는 계산기
+        //AC 누르면 disp1, disp2 리셋 기능까지 구현하기.
+        // 과제 2 : AI를 사용해서 계산기 코드도 한번 짜보기. 어떻게 요구하였는지도 같이 제출.
+
+<style>
+    h1 { text-align: center;}
+    .disp { width: 205px; height: 40px; margin-top: 3px; 
+            font-family: "Oxanium", sans-serif; font-size: 22px; text-align: right;}
+    input[type=button] { width: 50px; height: 50px; text-align: center;
+                        vertical-align: middle; margin-top: 5px;}
+    #clac { width: 220px; margin-left: auto; margin-right: auto;}
+</style>
+<body>
+    <h1> 계산기 </h1>
+    <div id="clac">
+        <div>
+            <input type=""text" class="disp" id="disp1" readonly>
+            <input type=""text" class="disp" id="disp2" readonly>            
+        </div>
+        <input type="button" class="num" value="7">
+        <input type="button" class="num" value="8">
+        <input type="button" class="num" value="9">
+        <input type="button" class="op" value="+"> <br>
+        <input type="button" class="num" value="4">
+        <input type="button" class="num" value="5">
+        <input type="button" class="num" value="6">
+        <input type="button" class="op" value="-"> <br>
+        <input type="button" class="num" value="1">
+        <input type="button" class="num" value="2">
+        <input type="button" class="num" value="3">
+        <input type="button" class="op" value="*"> <br>
+        <input type="button" class="func" value="AC">
+        <input type="button" class="num" value="0">
+        <input type="button" class="op" value="=">
+        <input type="button" class="op" value="/"> <br>
+</body>
+</html>
