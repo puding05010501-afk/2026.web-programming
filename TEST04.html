@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>계산기</title>
+    <style>
+/* Windows 11 계산기(표준 모드) 스타일 — 시스템 테마에 따라 라이트/다크 자동 전환 */
+
+:root {
+  --bg: #f3f3f3;
+  --text: #1b1b1b;
+  --text-sub: #5f5f5f;
+  --text-disabled: #a0a0a0;
+  --key-num: #ffffff;
+  --key-num-hover: #f7f7f7;
+  --key-op: #f9f9f9;
+  --key-op-hover: #f0f0f0;
+  --key-pressed: #ececec;
+  --key-stroke: rgba(0, 0, 0, 0.07);
+  --accent: #005fb8;
+  --accent-hover: #1a6fc0;
+  --accent-pressed: #3380c7;
+  --accent-text: #ffffff;
+  --subtle-hover: rgba(0, 0, 0, 0.05);
+  --subtle-pressed: rgba(0, 0, 0, 0.03);
+  --flyout: #f9f9f9;
+  --flyout-stroke: rgba(0, 0, 0, 0.1);
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #202020;
+    --text: #ffffff;
+    --text-sub: #c5c5c5;
+    --text-disabled: #6b6b6b;
+    --key-num: #3b3b3b;
+    --key-num-hover: #323232;
+    --key-op: #323232;
+    --key-op-hover: #3b3b3b;
+    --key-pressed: #282828;
+    --key-stroke: rgba(255, 255, 255, 0.04);
+    --accent: #4cc2ff;
+    --accent-hover: #47b1e8;
+    --accent-pressed: #42a1d2;
+    --accent-text: #000000;
+    --subtle-hover: rgba(255, 255, 255, 0.07);
+    --subtle-pressed: rgba(255, 255, 255, 0.04);
+    --flyout: #2c2c2c;
+    --flyout-stroke: rgba(0, 0, 0, 0.35);
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI Variable Text', 'Segoe UI', 'Malgun Gothic', system-ui, sans-serif;
+  font-size: 14px;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: default;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+
+svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- 전체 배치 ---------- */
+
+.app {
+  position: relative;
+  display: flex;
+  height: 100vh;
+  height: 100dvh;
+  min-width: 320px;
+  min-height: 460px;
+}
+
+.calc {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- 상단 표시줄 ---------- */
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 48px;
+  padding: 0 4px;
+  flex: none;
+}
+
+.mode {
+  margin: 0 0 2px 4px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 36px;
+  border-radius: 4px;
+}
+
+.icon-btn:hover {
+  background: var(--subtle-hover);
+}
+
+.icon-btn:active {
+  background: var(--subtle-pressed);
+}
+
+/* ---------- 표시 영역 ---------- */
+
+.screen {
+  flex: 1 1 0;
+  min-height: 100px;
+  max-height: 28vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 14px 4px;
+  text-align: right;
+}
+
+.expression {
+  min-height: 20px;
+  font-size: 14px;
+  color: var(--text-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  direction: rtl; /* 길어지면 앞부분을 잘라 최근 입력이 보이도록 */
+  unicode-bidi: plaintext;
+}
+
+.display {
+  height: 64px;
+  line-height: 64px;
+  font-family: 'Segoe UI Variable Display', 'Segoe UI', 'Malgun Gothic', system-ui, sans-serif;
+  font-size: 46px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ---------- 메모리 줄 ---------- */
+
+.memory-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 2px;
+  padding: 0 4px;
+  height: 34px;
+  flex: none;
+}
+
+.memory-row button {
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.memory-row button:hover:not(:disabled) {
+  background: var(--subtle-hover);
+}
+
+.memory-row button:active:not(:disabled) {
+  background: var(--subtle-pressed);
+}
+
+.chevron {
+  font-size: 9px;
+  margin-left: 1px;
+}
+
+button:disabled {
+  color: var(--text-disabled);
+}
+
+/* ---------- 키패드 ---------- */
+
+.keys {
+  flex: 3 1 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  gap: 2px;
+  padding: 2px 4px 4px;
+}
+
+.key {
+  display: grid;
+  place-items: center;
+  grid-auto-flow: column;
+  justify-content: center;
+  border: 1px solid var(--key-stroke);
+  border-radius: 4px;
+  font-size: 14px;
+  transition: background-color 0.08s;
+}
+
+.key.num {
+  background: var(--key-num);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.key.op {
+  background: var(--key-op);
+}
+
+.key.sym {
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.key.fn {
+  font-size: 18px;
+}
+
+.key.fn sup {
+  margin: 0 1px;
+}
+
+.key .x {
+  font-family: 'Cambria Math', 'Times New Roman', serif;
+  font-style: italic;
+}
+
+.key sup,
+.key sub {
+  font-size: 0.62em;
+  line-height: 1;
+  position: relative;
+  top: -0.5em; /* 그리드 항목이라 vertical-align 이 적용되지 않아 직접 올림 */
+}
+
+.key sub {
+  top: 0.25em;
+}
+
+.key.num:hover:not(:disabled) {
+  background: var(--key-num-hover);
+}
+
+.key.op:hover:not(:disabled) {
+  background: var(--key-op-hover);
+}
+
+.key.num:active:not(:disabled),
+.key.op:active:not(:disabled),
+.key.num.pressed,
+.key.op.pressed {
+  background: var(--key-pressed);
+  color: var(--text-sub);
+}
+
+.key.equals {
+  background: var(--accent);
+  color: var(--accent-text);
+  border-color: transparent;
+}
+
+.key.equals:hover {
+  background: var(--accent-hover);
+}
+
+.key.equals:active,
+.key.equals.pressed {
+  background: var(--accent-pressed);
+}
+
+/* ---------- 기록 / 메모리 패널 ---------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  flex: none;
+  padding-top: 8px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 12px;
+  height: 40px;
+  flex: none;
+}
+
+.tab {
+  position: relative;
+  padding: 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab.active {
+  color: var(--text);
+}
+
+.tab.active::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 4px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.empty {
+  margin: 12px 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.list li {
+  padding: 8px 12px;
+  border-radius: 4px;
+  text-align: right;
+}
+
+.list li:hover {
+  background: var(--subtle-hover);
+}
+
+.list li:active {
+  background: var(--subtle-pressed);
+}
+
+.item-expr {
+  font-size: 14px;
+  color: var(--text-sub);
+  overflow-wrap: anywhere;
+}
+
+.item-value {
+  font-size: 24px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 4px;
+  visibility: hidden;
+}
+
+.list li:hover .item-actions,
+.list li:focus-within .item-actions {
+  visibility: visible;
+}
+
+.item-actions button {
+  min-width: 40px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--key-stroke);
+  border-radius: 4px;
+  background: var(--key-num);
+  font-size: 12px;
+}
+
+.item-actions button:hover {
+  background: var(--key-num-hover);
+}
+
+.panel-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding: 4px;
+  flex: none;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* 넓은 창: 패널이 항상 옆에 보이고, 기록/메모리 열기 버튼은 숨김 */
+@media (min-width: 560px) {
+  #historyBtn,
+  #memOpen {
+    visibility: hidden;
+  }
+
+  .memory-row {
+    grid-template-columns: repeat(5, 1fr) 0;
+  }
+
+  #scrim.for-panel {
+    display: none;
+  }
+}
+
+/* 좁은 창: 패널이 키패드 위로 열림 */
+@media (max-width: 559.98px) {
+  .panel {
+    position: absolute;
+    z-index: 2;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    height: 64%;
+    background: var(--flyout);
+    border-top: 1px solid var(--flyout-stroke);
+    border-radius: 8px 8px 0 0;
+    box-shadow: var(--shadow);
+    transform: translateY(100%);
+    visibility: hidden;
+    transition: transform 0.16s ease-out, visibility 0s 0.16s;
+  }
+
+  .panel.open {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.16s ease-out;
+  }
+
+  .tabs {
+    display: none;
+  }
+}
+
+/* ---------- 탐색 메뉴 ---------- */
+
+.nav {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 256px;
+  padding: 6px 4px;
+  background: var(--flyout);
+  border-right: 1px solid var(--flyout-stroke);
+  border-radius: 0 8px 8px 0;
+  box-shadow: var(--shadow);
+}
+
+.nav[hidden] {
+  display: none;
+}
+
+.nav-title {
+  margin: 10px 12px 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.nav-item:hover,
+.nav-item.selected {
+  background: var(--subtle-hover);
+}
+
+.nav-item.selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+    </style>
+  </head>
+  <body>
+    <div class="app" id="app">
+      <!-- 계산기 본체 -->
+      <section class="calc" aria-label="표준 계산기">
+        <header class="top">
+          <button class="icon-btn" id="navBtn" type="button" aria-label="탐색 열기" title="탐색 열기">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" /></svg>
+          </button>
+          <h1 class="mode">표준</h1>
+          <span class="spacer"></span>
+          <button class="icon-btn" id="historyBtn" type="button" aria-label="기록 (Ctrl+H)" title="기록 (Ctrl+H)">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M2.6 8a5.4 5.4 0 1 0 1.7-3.9" />
+              <path d="M2.2 2.4v2.9h2.9" />
+              <path d="M8 5v3.2l2.2 1.3" />
+            </svg>
+          </button>
+        </header>
+
+        <div class="screen">
+          <div class="expression" id="expression" aria-label="수식"></div>
+          <div class="display" id="display" role="status" aria-live="polite">0</div>
+        </div>
+
+        <div class="memory-row" role="group" aria-label="메모리 컨트롤">
+          <button type="button" id="memClear" data-action="mc" title="모든 메모리 지우기 (Ctrl+L)">MC</button>
+          <button type="button" id="memRecall" data-action="mr" title="메모리 불러오기 (Ctrl+R)">MR</button>
+          <button type="button" data-action="m+" data-error-off title="메모리 더하기 (Ctrl+P)">M+</button>
+          <button type="button" data-action="m-" data-error-off title="메모리 빼기 (Ctrl+Q)">M-</button>
+          <button type="button" data-action="ms" data-error-off title="메모리 저장 (Ctrl+M)">MS</button>
+          <button type="button" id="memOpen" title="메모리">M<span class="chevron">&#x2228;</span></button>
+        </div>
+
+        <div class="keys" role="group" aria-label="키패드">
+          <button type="button" class="key op" data-action="percent" data-error-off aria-label="퍼센트">%</button>
+          <button type="button" class="key op" data-action="ce" aria-label="입력 지우기">CE</button>
+          <button type="button" class="key op" data-action="c" aria-label="지우기">C</button>
+          <button type="button" class="key op" data-action="back" aria-label="백스페이스">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M5.6 3.5h7.9a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H5.6L1.5 8z" />
+              <path d="M7.6 6l4 4m0-4l-4 4" />
+            </svg>
+          </button>
+
+          <button type="button" class="key op fn" data-action="inv" data-error-off aria-label="역수"><sup>1</sup>/<span class="x">x</span></button>
+          <button type="button" class="key op fn" data-action="sqr" data-error-off aria-label="제곱"><span class="x">x</span><sup>2</sup></button>
+          <button type="button" class="key op fn" data-action="sqrt" data-error-off aria-label="제곱근"><sup>2</sup>&#x221A;<span class="x">x</span></button>
+          <button type="button" class="key op sym" data-action="op" data-value="/" data-error-off aria-label="나누기">&#xF7;</button>
+
+          <button type="button" class="key num" data-action="digit" data-value="7">7</button>
+          <button type="button" class="key num" data-action="digit" data-value="8">8</button>
+          <button type="button" class="key num" data-action="digit" data-value="9">9</button>
+          <button type="button" class="key op sym" data-action="op" data-value="*" data-error-off aria-label="곱하기">&#xD7;</button>
+
+          <button type="button" class="key num" data-action="digit" data-value="4">4</button>
+          <button type="button" class="key num" data-action="digit" data-value="5">5</button>
+          <button type="button" class="key num" data-action="digit" data-value="6">6</button>
+          <button type="button" class="key op sym" data-action="op" data-value="-" data-error-off aria-label="빼기">&#x2212;</button>
+
+          <button type="button" class="key num" data-action="digit" data-value="1">1</button>
+          <button type="button" class="key num" data-action="digit" data-value="2">2</button>
+          <button type="button" class="key num" data-action="digit" data-value="3">3</button>
+          <button type="button" class="key op sym" data-action="op" data-value="+" data-error-off aria-label="더하기">+</button>
+
+          <button type="button" class="key num sym" data-action="negate" data-error-off aria-label="양수/음수"><sup>+</sup>/<sub>&#x2212;</sub></button>
+          <button type="button" class="key num" data-action="digit" data-value="0">0</button>
+          <button type="button" class="key num" data-action="decimal" data-error-off aria-label="소수점">.</button>
+          <button type="button" class="key equals sym" data-action="equals" aria-label="같음">=</button>
+        </div>
+      </section>
+
+      <!-- 기록 / 메모리 패널 (넓은 창: 옆에 고정, 좁은 창: 아래에서 열림) -->
+      <div class="scrim" id="scrim" hidden></div>
+      <aside class="panel" id="panel" aria-label="기록 및 메모리">
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab active" role="tab" data-tab="history" aria-selected="true">기록</button>
+          <button type="button" class="tab" role="tab" data-tab="memory" aria-selected="false">메모리</button>
+        </div>
+        <div class="panel-body">
+          <ul class="list" id="historyList"></ul>
+          <ul class="list" id="memoryList" hidden></ul>
+          <p class="empty" id="panelEmpty"></p>
+        </div>
+        <div class="panel-foot">
+          <button class="icon-btn" id="panelClear" type="button" aria-label="모두 지우기" title="모두 지우기">
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M2.5 4.5h11M6.3 4.5V3h3.4v1.5M4.2 4.5l.6 8.5h6.4l.6-8.5M6.8 7v3.8M9.2 7v3.8" />
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      <!-- 탐색 메뉴 -->
+      <nav class="nav" id="nav" aria-label="계산기 모드" hidden>
+        <button class="icon-btn" id="navClose" type="button" aria-label="탐색 닫기">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" /></svg>
+        </button>
+        <p class="nav-title">계산기</p>
+        <button type="button" class="nav-item selected" id="navStandard">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <rect x="3" y="1.5" width="10" height="13" rx="1.5" />
+            <path d="M5.5 4.5h5M5.6 8h.01M8 8h.01M10.4 8h.01M5.6 11h.01M8 11h.01M10.4 11h.01" />
+          </svg>
+          표준
+        </button>
+      </nav>
+    </div>
+
+    <script>
+/*
+ * rational.js — BigInt 기반 유리수 연산
+ *
+ * 자바스크립트의 부동소수점(0.1 + 0.2 = 0.30000000000000004) 문제를 피하기 위해
+ * 모든 값을 분자/분모(BigInt) 쌍으로 다룹니다. Windows 계산기도 내부적으로
+ * 유리수 연산을 사용하기 때문에 1 ÷ 3 × 3 = 1 과 같은 결과가 동일하게 나옵니다.
+ */
+(function (root) {
+  'use strict';
+
+  const SIG_DIGITS = 16; // 화면에 표시하는 유효 숫자 자릿수
+  const KEEP_DIGITS = 60; // 내부적으로 유지하는 최소 유효 숫자 자릿수
+  const SQRT_DIGITS = 40; // 제곱근 계산 정밀도
+  const MAX_EXPONENT = 10000; // 이 자릿수를 넘으면 오버플로
+
+  const abs = (x) => (x < 0n ? -x : x);
+  const pow10 = (k) => 10n ** BigInt(k);
+  const len = (x) => abs(x).toString().length;
+
+  function gcd(a, b) {
+    while (b) [a, b] = [b, a % b];
+    return a;
+  }
+
+  // 반올림 나눗셈 (b > 0)
+  function divRound(a, b) {
+    const q = (2n * abs(a) + b) / (2n * b);
+    return a < 0n ? -q : q;
+  }
+
+  function make(n, d = 1n) {
+    if (d < 0n) {
+      n = -n;
+      d = -d;
+    }
+    let g = gcd(abs(n), d);
+    if (g > 1n) {
+      n /= g;
+      d /= g;
+    }
+    // 분모가 지나치게 커지면 유효 숫자 약 60자리로 반올림해 크기를 제한
+    if (d > pow10(80)) {
+      const scale = KEEP_DIGITS + Math.max(0, len(d) - len(n));
+      n = divRound(n * pow10(scale), d);
+      d = pow10(scale);
+      g = gcd(abs(n), d);
+      if (g > 1n) {
+        n /= g;
+        d /= g;
+      }
+    }
+    return { n, d };
+  }
+
+  const ZERO = make(0n);
+  const HUNDRED = make(100n);
+
+  // "-12.50" 같은 입력 문자열을 유리수로 변환
+  function parse(str) {
+    const neg = str.startsWith('-');
+    if (neg) str = str.slice(1);
+    const [int, frac = ''] = str.split('.');
+    const n = BigInt((int || '0') + frac);
+    return make(neg ? -n : n, pow10(frac.length));
+  }
+
+  const add = (a, b) => make(a.n * b.d + b.n * a.d, a.d * b.d);
+  const sub = (a, b) => make(a.n * b.d - b.n * a.d, a.d * b.d);
+  const mul = (a, b) => make(a.n * b.n, a.d * b.d);
+  const div = (a, b) => make(a.n * b.d, a.d * b.n); // b ≠ 0 은 호출자가 보장
+  const neg = (a) => ({ n: -a.n, d: a.d });
+  const isZero = (a) => a.n === 0n;
+  const isNegative = (a) => a.n < 0n;
+  const isOverflow = (a) => len(a.n) - len(a.d) > MAX_EXPONENT;
+
+  function isqrt(x) {
+    if (x < 2n) return x;
+    let r = 1n << BigInt((x.toString(2).length + 1) >> 1);
+    for (;;) {
+      const next = (r + x / r) >> 1n;
+      if (next >= r) return r;
+      r = next;
+    }
+  }
+
+  // √(n/d) = √(n·d) / d — 완전제곱이면 정확한 값이 나옵니다 (a ≥ 0 은 호출자가 보장)
+  function sqrt(a) {
+    const s = isqrt(a.n * a.d * pow10(2 * SQRT_DIGITS));
+    return make(s, a.d * pow10(SQRT_DIGITS));
+  }
+
+  const group = (int) => int.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const trimZeros = (s) => s.replace(/0+$/, '');
+
+  // 유효 숫자 16자리로 반올림한 화면 표시용 문자열
+  function format(r) {
+    if (r.n === 0n) return '0';
+    const n = abs(r.n);
+    const d = r.d;
+
+    // 10^e ≤ |r| < 10^(e+1) 이 되는 지수 e
+    let e = len(n) - len(d);
+    const reaches = e >= 0 ? n >= d * pow10(e) : n * pow10(-e) >= d;
+    if (!reaches) e--;
+
+    const shift = SIG_DIGITS - 1 - e;
+    const mantissa = shift >= 0 ? divRound(n * pow10(shift), d) : divRound(n, d * pow10(-shift));
+    let s = mantissa.toString();
+    if (s.length > SIG_DIGITS) {
+      // 반올림으로 자리올림이 발생한 경우 (9.99… → 10.0…)
+      e++;
+      s = s.slice(0, SIG_DIGITS);
+    }
+
+    const sign = r.n < 0n ? '-' : '';
+    if (e >= SIG_DIGITS || e < -9) {
+      return `${sign}${s[0]}.${trimZeros(s.slice(1))}e${e < 0 ? '-' : '+'}${Math.abs(e)}`;
+    }
+    let int;
+    let frac;
+    if (e >= 0) {
+      int = s.slice(0, e + 1);
+      frac = trimZeros(s.slice(e + 1));
+    } else {
+      int = '0';
+      frac = trimZeros('0'.repeat(-e - 1) + s);
+    }
+    return sign + group(int) + (frac ? '.' + frac : '');
+  }
+
+  // 입력 중인 문자열("1234.50")에 천 단위 구분 기호만 추가
+  function formatInput(str) {
+    const neg = str.startsWith('-');
+    if (neg) str = str.slice(1);
+    const dot = str.indexOf('.');
+    const int = dot === -1 ? str : str.slice(0, dot);
+    const rest = dot === -1 ? '' : str.slice(dot);
+    return (neg ? '-' : '') + group(int) + rest;
+  }
+
+  const Rational = {
+    ZERO,
+    HUNDRED,
+    make,
+    parse,
+    add,
+    sub,
+    mul,
+    div,
+    neg,
+    sqrt,
+    isZero,
+    isNegative,
+    isOverflow,
+    format,
+    formatInput,
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = Rational;
+  else root.Rational = Rational;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/*
+ * calculator.js — 표준 계산기 엔진 (화면과 무관한 순수 로직)
+ *
+ * Windows 계산기 "표준" 모드와 같은 즉시 실행 방식입니다.
+ * 연산자 우선순위 없이 입력한 순서대로 계산합니다. (1 + 2 × 3 = 9)
+ */
+(function (root) {
+  'use strict';
+
+  const R = typeof module !== 'undefined' && module.exports ? require('./rational.js') : root.Rational;
+
+  const SYMBOL = { '+': '+', '-': '-', '*': '×', '/': '÷' };
+  const MAX_DIGITS = 16;
+  const MESSAGE = {
+    divideByZero: '0으로 나눌 수 없습니다',
+    undefined: '결과가 정의되지 않았습니다',
+    invalidInput: '입력이 잘못되었습니다',
+    overflow: '오버플로',
+  };
+
+  class CalcError extends Error {}
+
+  const fmt = R.format;
+
+  function digitCount(input) {
+    const digits = input.replace(/[-.]/g, '');
+    return /^-?0\./.test(input) ? digits.length - 1 : digits.length;
+  }
+
+  class Calculator {
+    constructor() {
+      this.history = []; // { expr, result, value } — 최신 항목이 앞
+      this.memory = []; // Rational — 최신 항목이 앞
+      this.reset();
+    }
+
+    reset() {
+      this.input = null; // 입력 중인 숫자 문자열 (입력 중이 아니면 null)
+      this.value = R.ZERO; // 현재 화면에 표시된 값
+      this.operandExpr = null; // 현재 피연산자의 수식 표기 (예: "sqr(3)")
+      this.acc = null; // 대기 중인 연산의 왼쪽 값
+      this.accExpr = ''; // 왼쪽 값의 수식 표기 (예: "5 + 3")
+      this.op = null; // 대기 중인 연산자
+      this.hasOperand = false; // 연산자 입력 후 피연산자가 들어왔는지
+      this.last = null; // = 반복 입력용 { op, operand }
+      this.evalExpr = null; // = 직후 수식 줄에 표시할 문자열
+      this.error = null;
+    }
+
+    /* ---------- 화면 표시 ---------- */
+
+    get display() {
+      if (this.error) return this.error;
+      return this.input !== null ? R.formatInput(this.input) : fmt(this.value);
+    }
+
+    get expression() {
+      if (this.evalExpr !== null) return this.evalExpr;
+      let text = this.op ? `${this.accExpr} ${SYMBOL[this.op]}` : '';
+      if (this.operandExpr) text += (text ? ' ' : '') + this.operandExpr;
+      return text;
+    }
+
+    /* ---------- 내부 도우미 ---------- */
+
+    _operandText() {
+      return this.operandExpr ?? fmt(this.value);
+    }
+
+    _check(result) {
+      if (R.isOverflow(result)) throw new CalcError(MESSAGE.overflow);
+      return result;
+    }
+
+    _apply(a, op, b) {
+      switch (op) {
+        case '+':
+          return this._check(R.add(a, b));
+        case '-':
+          return this._check(R.sub(a, b));
+        case '*':
+          return this._check(R.mul(a, b));
+        case '/':
+          if (R.isZero(b)) {
+            throw new CalcError(R.isZero(a) ? MESSAGE.undefined : MESSAGE.divideByZero);
+          }
+          return this._check(R.div(a, b));
+        default:
+          throw new Error(`알 수 없는 연산자: ${op}`);
+      }
+    }
+
+    // 계산 오류가 나면 오류 상태로 전환하고 null 을 돌려줍니다
+    _try(fn, exprOnFail) {
+      try {
+        return fn();
+      } catch (e) {
+        if (!(e instanceof CalcError)) throw e;
+        this.error = e.message;
+        this.evalExpr = exprOnFail;
+        return null;
+      }
+    }
+
+    // 입력 중이던 숫자를 확정 (다음 숫자 입력은 새 숫자로 시작)
+    _commitInput() {
+      this.input = null;
+    }
+
+    /* ---------- 숫자 입력 ---------- */
+
+    digit(d) {
+      if (this.error) this.reset();
+      this.evalExpr = null;
+      if (this.input === null || this.input === '0') this.input = d;
+      else if (digitCount(this.input) < MAX_DIGITS) this.input += d;
+      this._afterInput();
+    }
+
+    decimal() {
+      if (this.error) this.reset();
+      this.evalExpr = null;
+      if (this.input === null) this.input = '0.';
+      else if (!this.input.includes('.')) this.input += '.';
+      this._afterInput();
+    }
+
+    _afterInput() {
+      this.operandExpr = null;
+      this.value = R.parse(this.input);
+      this.hasOperand = true;
+    }
+
+    backspace() {
+      if (this.error) return this.reset();
+      if (this.evalExpr !== null) {
+        this.evalExpr = null; // 결과 상태에서는 수식 줄만 지움
+        return;
+      }
+      if (this.input === null) return;
+      let next = this.input.slice(0, -1);
+      if (next === '' || next === '-' || next === '-0') next = '0';
+      this.input = next;
+      this.value = R.parse(next);
+    }
+
+    clearEntry() {
+      if (this.error || this.evalExpr !== null) return this.reset();
+      this.input = null;
+      this.value = R.ZERO;
+      this.operandExpr = null;
+      if (this.op) this.hasOperand = true;
+    }
+
+    clear() {
+      this.reset();
+    }
+
+    /* ---------- 연산 ---------- */
+
+    operator(next) {
+      if (this.error) return;
+      const text = this._operandText();
+
+      if (this.evalExpr !== null) {
+        // = 직후: 결과를 왼쪽 값으로 이어서 계산
+        this.evalExpr = null;
+        this.acc = this.value;
+        this.accExpr = fmt(this.value);
+      } else if (this.op && !this.hasOperand) {
+        // 연산자를 연달아 누르면 교체만
+      } else if (this.op) {
+        const expr = `${this.accExpr} ${SYMBOL[this.op]} ${text}`;
+        const { acc, op, value } = this;
+        const result = this._try(() => this._apply(acc, op, value), `${expr} ${SYMBOL[next]}`);
+        if (result === null) return;
+        this.acc = result;
+        this.accExpr = expr;
+        this.value = result;
+      } else {
+        this.acc = this.value;
+        this.accExpr = text;
+      }
+
+      this.op = next;
+      this.input = null;
+      this.operandExpr = null;
+      this.hasOperand = false;
+    }
+
+    equals() {
+      if (this.error) return this.reset();
+      const text = this._operandText();
+      let expr;
+      let result;
+
+      if (this.op) {
+        const { acc, op, value } = this;
+        expr = `${this.accExpr} ${SYMBOL[op]} ${text}`;
+        result = this._try(() => this._apply(acc, op, value), expr);
+        if (result === null) return;
+        this.last = { op, operand: value };
+      } else if (this.last) {
+        // = 반복: 마지막 연산을 다시 적용
+        const { op, operand } = this.last;
+        const { value } = this;
+        expr = `${text} ${SYMBOL[op]} ${fmt(operand)}`;
+        result = this._try(() => this._apply(value, op, operand), expr);
+        if (result === null) return;
+      } else {
+        expr = text;
+        result = this.value;
+      }
+
+      expr += ' =';
+      this.history.unshift({ expr, result: fmt(result), value: result });
+      this.value = result;
+      this.input = null;
+      this.operandExpr = null;
+      this.acc = null;
+      this.accExpr = '';
+      this.op = null;
+      this.hasOperand = false;
+      this.evalExpr = expr;
+    }
+
+    // kind: 'inv' (1/x) | 'sqr' (x²) | 'sqrt' (√x) | 'neg' (부호 반전)
+    unary(kind) {
+      if (this.error) return;
+      const text = this._operandText();
+      const x = this.value;
+      const label = {
+        inv: `1/(${text})`,
+        sqr: `sqr(${text})`,
+        sqrt: `√(${text})`,
+        neg: `negate(${text})`,
+      }[kind];
+      const prefix = this.op && this.evalExpr === null ? `${this.accExpr} ${SYMBOL[this.op]} ` : '';
+
+      const result = this._try(() => {
+        switch (kind) {
+          case 'inv':
+            if (R.isZero(x)) throw new CalcError(MESSAGE.divideByZero);
+            return this._check(R.div(R.make(1n), x));
+          case 'sqr':
+            return this._check(R.mul(x, x));
+          case 'sqrt':
+            if (R.isNegative(x)) throw new CalcError(MESSAGE.invalidInput);
+            return R.sqrt(x);
+          case 'neg':
+            return R.neg(x);
+          default:
+            throw new Error(`알 수 없는 함수: ${kind}`);
+        }
+      }, prefix + label);
+      if (result === null) return;
+
+      this.evalExpr = null;
+      this.value = result;
+      this.input = null;
+      this.operandExpr = label;
+      this.hasOperand = true;
+    }
+
+    negate() {
+      if (this.error) return;
+      if (this.input !== null) {
+        if (R.isZero(this.value)) return;
+        this.input = this.input.startsWith('-') ? this.input.slice(1) : '-' + this.input;
+        this.value = R.parse(this.input);
+        return;
+      }
+      if (R.isZero(this.value)) return;
+      this.unary('neg');
+    }
+
+    // +, - 에서는 왼쪽 값의 n%, ×, ÷ 에서는 n/100, 대기 중인 연산이 없으면 0
+    percent() {
+      if (this.error) return;
+      let result = R.ZERO;
+      if (this.op && this.evalExpr === null) {
+        result =
+          this.op === '+' || this.op === '-'
+            ? R.div(R.mul(this.acc, this.value), R.HUNDRED)
+            : R.div(this.value, R.HUNDRED);
+      }
+      this.evalExpr = null;
+      this.value = result;
+      this.input = null;
+      this.operandExpr = fmt(result);
+      this.hasOperand = true;
+    }
+
+    /* ---------- 메모리 ---------- */
+
+    memoryStore() {
+      if (this.error) return;
+      this.memory.unshift(this.value);
+      this._commitInput();
+    }
+
+    memoryAdd(index = 0) {
+      if (this.error) return;
+      if (this.memory.length === 0) this.memory.unshift(this.value);
+      else this.memory[index] = R.add(this.memory[index], this.value);
+      this._commitInput();
+    }
+
+    memorySubtract(index = 0) {
+      if (this.error) return;
+      if (this.memory.length === 0) this.memory.unshift(R.neg(this.value));
+      else this.memory[index] = R.sub(this.memory[index], this.value);
+      this._commitInput();
+    }
+
+    memoryRecall(index = 0) {
+      if (this.error || index >= this.memory.length) return;
+      this.evalExpr = null;
+      this.value = this.memory[index];
+      this.input = null;
+      this.operandExpr = null;
+      this.hasOperand = true;
+    }
+
+    memoryRemove(index) {
+      this.memory.splice(index, 1);
+    }
+
+    memoryClear() {
+      this.memory = [];
+    }
+
+    memoryText(index) {
+      return fmt(this.memory[index]);
+    }
+
+    /* ---------- 기록 ---------- */
+
+    historyRecall(index) {
+      const item = this.history[index];
+      if (!item) return;
+      this.reset();
+      this.value = item.value;
+      this.evalExpr = item.expr;
+    }
+
+    historyClear() {
+      this.history = [];
+    }
+  }
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = Calculator;
+  else root.Calculator = Calculator;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/*
+ * app.js — 화면 연결: 버튼/키보드 입력을 계산기 엔진에 전달하고 결과를 그립니다.
+ */
+(function () {
+  'use strict';
+
+  const calc = new window.Calculator();
+  const $ = (id) => document.getElementById(id);
+
+  const el = {
+    expression: $('expression'),
+    display: $('display'),
+    memClear: $('memClear'),
+    memRecall: $('memRecall'),
+    memOpen: $('memOpen'),
+    historyBtn: $('historyBtn'),
+    panel: $('panel'),
+    scrim: $('scrim'),
+    historyList: $('historyList'),
+    memoryList: $('memoryList'),
+    panelEmpty: $('panelEmpty'),
+    panelClear: $('panelClear'),
+    nav: $('nav'),
+  };
+
+  const ui = { tab: 'history', panelOpen: false, navOpen: false };
+
+  /* ---------- 동작 실행 ---------- */
+
+  const actions = {
+    digit: (v) => calc.digit(v),
+    decimal: () => calc.decimal(),
+    op: (v) => calc.operator(v),
+    equals: () => calc.equals(),
+    percent: () => calc.percent(),
+    negate: () => calc.negate(),
+    inv: () => calc.unary('inv'),
+    sqr: () => calc.unary('sqr'),
+    sqrt: () => calc.unary('sqrt'),
+    ce: () => calc.clearEntry(),
+    c: () => calc.clear(),
+    back: () => calc.backspace(),
+    mc: () => calc.memoryClear(),
+    mr: () => calc.memoryRecall(),
+    'm+': () => calc.memoryAdd(),
+    'm-': () => calc.memorySubtract(),
+    ms: () => calc.memoryStore(),
+  };
+
+  function run(action, value) {
+    actions[action](value);
+    render();
+  }
+
+  /* ---------- 그리기 ---------- */
+
+  function fitDisplay() {
+    const d = el.display;
+    d.style.fontSize = '';
+    if (d.scrollWidth > d.clientWidth) {
+      const base = parseFloat(getComputedStyle(d).fontSize);
+      d.style.fontSize = Math.max(12, Math.floor((base * d.clientWidth) / d.scrollWidth)) + 'px';
+    }
+  }
+
+  function renderList(list, items, build) {
+    list.replaceChildren(
+      ...items.map((item, index) => {
+        const li = document.createElement('li');
+        li.dataset.index = index;
+        li.tabIndex = 0;
+        build(li, item, index);
+        return li;
+      })
+    );
+  }
+
+  function div(className, text) {
+    const node = document.createElement('div');
+    node.className = className;
+    node.textContent = text;
+    return node;
+  }
+
+  function renderPanel() {
+    const isHistory = ui.tab === 'history';
+    el.historyList.hidden = !isHistory;
+    el.memoryList.hidden = isHistory;
+
+    renderList(el.historyList, calc.history, (li, item) => {
+      li.append(div('item-expr', item.expr), div('item-value', item.result));
+    });
+
+    renderList(el.memoryList, calc.memory, (li, _item, index) => {
+      const buttons = div('item-actions', '');
+      for (const [act, label, title] of [
+        ['remove', 'MC', '메모리 항목 지우기'],
+        ['add', 'M+', '메모리 항목에 더하기'],
+        ['sub', 'M-', '메모리 항목에서 빼기'],
+      ]) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.dataset.mem = act;
+        b.textContent = label;
+        b.title = title;
+        buttons.append(b);
+      }
+      li.append(div('item-value', calc.memoryText(index)), buttons);
+    });
+
+    const count = isHistory ? calc.history.length : calc.memory.length;
+    el.panelEmpty.hidden = count > 0;
+    el.panelEmpty.textContent = isHistory ? '아직 기록이 없습니다.' : '메모리에 저장된 내용이 없습니다.';
+    el.panelClear.style.visibility = count > 0 ? 'visible' : 'hidden';
+    el.panelClear.title = isHistory ? '모든 기록 지우기' : '모든 메모리 지우기';
+    el.panelClear.setAttribute('aria-label', el.panelClear.title);
+
+    document.querySelectorAll('.tab').forEach((tab) => {
+      const active = tab.dataset.tab === ui.tab;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', active);
+    });
+
+    el.panel.classList.toggle('open', ui.panelOpen);
+    el.nav.hidden = !ui.navOpen;
+    el.scrim.hidden = !(ui.panelOpen || ui.navOpen);
+    el.scrim.classList.toggle('for-panel', ui.panelOpen && !ui.navOpen);
+  }
+
+  function render() {
+    el.expression.textContent = calc.expression;
+    el.display.textContent = calc.display;
+    fitDisplay();
+
+    const hasError = Boolean(calc.error);
+    document.querySelectorAll('[data-error-off]').forEach((b) => (b.disabled = hasError));
+    const noMemory = calc.memory.length === 0;
+    el.memClear.disabled = el.memRecall.disabled = el.memOpen.disabled = noMemory || hasError;
+
+    renderPanel();
+  }
+
+  /* ---------- 패널 / 탐색 ---------- */
+
+  function togglePanel(tab) {
+    ui.panelOpen = !(ui.panelOpen && ui.tab === tab);
+    ui.tab = tab;
+    ui.navOpen = false;
+    render();
+  }
+
+  function closeOverlays() {
+    ui.panelOpen = false;
+    ui.navOpen = false;
+    render();
+  }
+
+  /* ---------- 마우스 / 터치 ---------- */
+
+  document.querySelector('.calc').addEventListener('click', (e) => {
+    const button = e.target.closest('button[data-action]');
+    if (button) run(button.dataset.action, button.dataset.value);
+  });
+
+  el.historyBtn.addEventListener('click', () => togglePanel('history'));
+  el.memOpen.addEventListener('click', () => togglePanel('memory'));
+  el.scrim.addEventListener('click', closeOverlays);
+
+  $('navBtn').addEventListener('click', () => {
+    ui.navOpen = true;
+    ui.panelOpen = false;
+    render();
+  });
+  $('navClose').addEventListener('click', closeOverlays);
+  $('navStandard').addEventListener('click', closeOverlays);
+
+  document.querySelector('.tabs').addEventListener('click', (e) => {
+    const tab = e.target.closest('.tab');
+    if (!tab) return;
+    ui.tab = tab.dataset.tab;
+    render();
+  });
+
+  el.panelClear.addEventListener('click', () => {
+    if (ui.tab === 'history') calc.historyClear();
+    else calc.memoryClear();
+    ui.panelOpen = false;
+    render();
+  });
+
+  function pickHistory(e) {
+    const li = e.target.closest('li');
+    if (!li) return;
+    calc.historyRecall(Number(li.dataset.index));
+    ui.panelOpen = false;
+    render();
+  }
+
+  function pickMemory(e) {
+    const li = e.target.closest('li');
+    if (!li) return;
+    const index = Number(li.dataset.index);
+    const button = e.target.closest('button[data-mem]');
+    if (!button) {
+      calc.memoryRecall(index);
+      ui.panelOpen = false;
+    } else if (button.dataset.mem === 'remove') calc.memoryRemove(index);
+    else if (button.dataset.mem === 'add') calc.memoryAdd(index);
+    else calc.memorySubtract(index);
+    render();
+  }
+
+  el.historyList.addEventListener('click', pickHistory);
+  el.memoryList.addEventListener('click', pickMemory);
+
+  /* ---------- 키보드 ---------- */
+
+  const KEYS = {
+    '.': ['decimal'],
+    ',': ['decimal'],
+    '+': ['op', '+'],
+    '-': ['op', '-'],
+    '*': ['op', '*'],
+    '/': ['op', '/'],
+    '=': ['equals'],
+    Enter: ['equals'],
+    '%': ['percent'],
+    Backspace: ['back'],
+    Delete: ['ce'],
+    Escape: ['c'],
+    F9: ['negate'],
+    r: ['inv'],
+    R: ['inv'],
+    q: ['sqr'],
+    Q: ['sqr'],
+    '@': ['sqrt'],
+  };
+  for (let d = 0; d <= 9; d++) KEYS[d] = ['digit', String(d)];
+
+  const CTRL_KEYS = { m: 'ms', p: 'm+', q: 'm-', r: 'mr', l: 'mc' };
+
+  function flash(action, value) {
+    const selector =
+      value === undefined
+        ? `button[data-action="${action}"]`
+        : `button[data-action="${action}"][data-value="${value}"]`;
+    const button = document.querySelector(selector);
+    if (!button) return;
+    button.classList.add('pressed');
+    setTimeout(() => button.classList.remove('pressed'), 110);
+  }
+
+  function isDisabled(action) {
+    const button = document.querySelector(`button[data-action="${action}"]`);
+    return Boolean(button && button.disabled);
+  }
+
+  async function paste() {
+    try {
+      const text = (await navigator.clipboard.readText()).replace(/[,\s]/g, '');
+      if (!/^-?(\d+\.?\d*|\.\d+)$/.test(text)) return;
+      calc.clearEntry();
+      for (const ch of text.replace('-', '')) {
+        if (ch === '.') calc.decimal();
+        else calc.digit(ch);
+      }
+      if (text.startsWith('-')) calc.negate();
+      render();
+    } catch {
+      /* 클립보드 권한이 없으면 무시 */
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey) return;
+
+    if (e.ctrlKey || e.metaKey) {
+      const key = e.key.toLowerCase();
+      if (e.shiftKey && key === 'd') {
+        calc.historyClear();
+        render();
+      } else if (key === 'h') togglePanel('history');
+      else if (key === 'c') {
+        if (String(window.getSelection())) return; // 선택한 텍스트는 기본 복사
+        navigator.clipboard?.writeText(calc.display.replace(/,/g, '')).catch(() => {});
+      } else if (key === 'v') paste();
+      else if (CTRL_KEYS[key]) {
+        const action = CTRL_KEYS[key];
+        if (!isDisabled(action)) run(action);
+      } else return;
+      e.preventDefault();
+      return;
+    }
+
+    if (e.key === 'Escape' && (ui.panelOpen || ui.navOpen)) {
+      closeOverlays();
+      e.preventDefault();
+      return;
+    }
+
+    const mapped = KEYS[e.key];
+    if (!mapped) return;
+    e.preventDefault(); // Enter 가 포커스된 버튼을 다시 누르는 것을 방지
+    const [action, value] = mapped;
+    if (isDisabled(action)) return;
+    flash(action, value);
+    run(action, value);
+  });
+
+  window.addEventListener('resize', fitDisplay);
+  render();
+})();
+    </script>
+  </body>
+</html>
