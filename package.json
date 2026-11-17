@@ -1,4 +1,10 @@
 {
+  "name": "web-programming",
+  "version": "1.0.0",
+  "main": "node03.js",
+  "scripts": {
+    "start": "node node03.js"
+  },
   "dependencies": {
     "ansi-colors": "^4.1.3"
   }
