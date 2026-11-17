@@ -1,4 +1,5 @@
 const http = require("http");
+const PORT = process.env.PORT || 3000;
 
 const server = http.createServer((req,res)=>{
   console.log("요청 발생");
@@ -22,6 +23,6 @@ const server = http.createServer((req,res)=>{
   }
 })
 
-server.listen(PORT, ()=>{
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`${PORT}번 포트로 서버 실행`);
 });
